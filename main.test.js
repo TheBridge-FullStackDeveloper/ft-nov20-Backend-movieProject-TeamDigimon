@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-// dentro del require ponemos el nombre del archivo al que vamos a hacerle el test//
-// ejemplo//
-=======
 
 
 // dentro del require ponemos el nombre del archivo al que vamos a hacerle el test
 // ejemplo
->>>>>>> a5fc4edf949cdd2d41e55f4510d4ff3ed0b88a63
 
 // const suma = require("./main.js");
 
@@ -18,44 +13,33 @@
 
 //login
 
-<<<<<<< HEAD
+
 const checkPassword = require(".main.js");
 const checkUsers = require(".main.js");
 const popUp = require(".main.js");
 
 test("Aqui se valida el login", () => {
-<<<<<<< HEAD
+
 	expect(checkPassword(password.value).toBe(true));
 	expect(checkUsers(user.value).toBe(true));
 	expect(popUp().toBe("string"));
 });
 
-=======
-	expect(checkPassword(user1).toBe(true));
-	expect(checkUsers(user1).toBe(true));
-	expect(popUp().toBe("string"));
-});
+
 
 // register
 
->>>>>>> cda075c956cc82e3f34f1ffcc3598e7b740d9875
 const registerUser = require(".main.js");
 
-=======
->>>>>>> a5fc4edf949cdd2d41e55f4510d4ff3ed0b88a63
+
 const user1 = {
 	"email": "test1@test.com",
 	"password": "Test12*."
 };
 const user2 = {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"email": "test1aest.com",
-=======
 	"email": "test1aest",
-=======
 	"email": "test1aest.com",
->>>>>>> a5fc4edf949cdd2d41e55f4510d4ff3ed0b88a63
 	"password": "Test12*."
 };
 const user3 = {
@@ -64,10 +48,17 @@ const user3 = {
 };
 const user4 = {
 	"email": "test1aest",
->>>>>>> cda075c956cc82e3f34f1ffcc3598e7b740d9875
 	"password": "Test12*."
 };
 const FavMovie = {
+	"title" : "algo",
+	"img" : "nose.img",
+	"year": 2019,
+	"director" : "cameron diaz",
+	"category" : "crimen",
+	"duration" : 200000
+};
+const NewMovie = {
 	"title" : "algo",
 	"img" : "nose.img",
 	"year": 2019,
@@ -81,7 +72,9 @@ const checkPassword = require(".main.js");
 const checkUsers = require(".main.js");
 const popUp = require(".main.js");
 const IsthereFav = require(".main.js");
+const IsthereMovie = require(".main.js");
 const addMoviefun = require(".main.js");
+const addMovie = require (".main.js");
 const deleteMovie = require(".main.js");
 
 test("Aqui se valida el login", () => {
@@ -95,21 +88,16 @@ test("Aqui se valida el register", () => {
 	expect(registerUser("aa@aa.aa").toBe(false));
 	expect(registerUser(user1.value).toBe(false));
 	expect(registerUser().toBe(false));
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 });
 
 ///TEST DE CREATE MOVIE///
-cont newMovie = {
-	
-}
-
 
 test("Aqui se valida la nueva pelicula", () =>{
+	expect(addMovie(NewMovie).tobe(false))
+	expect(IsthereMovie(NewMovie).tobe(false));
+	expect(popUp().tobe("String"));
 
-=======
->>>>>>> cda075c956cc82e3f34f1ffcc3598e7b740d9875
-=======
 });
 
 ///// ADDMOVIE USER
