@@ -112,5 +112,23 @@ test("Aqui se valida El favorito al movie", () => {
 
 test("Aqui se valida el DeleteMovie", ()=>{
 	expect(deleteMovie(FavMovie)).tobe(true);
->>>>>>> a5fc4edf949cdd2d41e55f4510d4ff3ed0b88a63
+
+});
+
+// /SEARCH
+
+const search = require(".main.js");
+const objetoDatosMovies = {
+	"title": "movie1",
+	"img": "www.url.com/img",
+	"year": "aaaa",
+	"director": "director",
+	"category": "category",
+	"duration": "120min"
+};
+
+test("Validamos nuestro search", () => {
+
+	expect(search(objetoDatosMovies.value).tobe(true));
+
 });
