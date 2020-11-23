@@ -74,7 +74,7 @@ const popUp = require(".main.js");
 const IsthereFav = require(".main.js");
 const IsthereMovie = require(".main.js");
 const addMoviefun = require(".main.js");
-const addMovie = require (".main.js");
+const CheckCreateMovieADM = require (".main.js");
 const deleteMovie = require(".main.js");
 
 test("Aqui se valida el login", () => {
@@ -94,7 +94,7 @@ test("Aqui se valida el register", () => {
 ///TEST DE CREATE MOVIE///
 
 test("Aqui se valida la nueva pelicula", () =>{
-	expect(addMovie(NewMovie).tobe(false))
+	expect(CheckCreateMovieADM((NewMovie).tobe(false))
 	expect(IsthereMovie(NewMovie).tobe(false));
 	expect(popUp().tobe("String"));
 
@@ -112,5 +112,4 @@ test("Aqui se valida El favorito al movie", () => {
 
 test("Aqui se valida el DeleteMovie", ()=>{
 	expect(deleteMovie(FavMovie)).tobe(true);
->>>>>>> a5fc4edf949cdd2d41e55f4510d4ff3ed0b88a63
 });
