@@ -14,9 +14,7 @@
 //login
 
 
-const checkPassword = require(".main.js");
-const checkUsers = require(".main.js");
-const popUp = require(".main.js");
+
 
 test("Aqui se valida el login", () => {
 
@@ -29,7 +27,6 @@ test("Aqui se valida el login", () => {
 
 // register
 
-const registerUser = require(".main.js");
 
 
 const user1 = {
@@ -81,12 +78,15 @@ const addMoviefun = require(".main.js");
 const addMovie = require (".main.js");
 const deleteMovie = require(".main.js");
 
+//TEST DE LOGIN
+
 test("Aqui se valida el login", () => {
 	expect(checkPassword(user1.password).toBe(true));
 	expect(checkUsers(user2.email).toBe(true));
 	expect(popUp().toBe("string"));
 });
 
+//TEST DE REGISTER
 
 test("Aqui se valida el register", () => {
 	expect(registerUser("aa@aa.aa").toBe(false));
@@ -97,7 +97,7 @@ test("Aqui se valida el register", () => {
 	expect(registerUser(user5).toBe(false));
 	expect(registerUser().toBe(false));
 
-});
+})
 
 ///TEST DE CREATE MOVIE///
 
@@ -140,4 +140,31 @@ test("Validamos nuestro search", () => {
 	expect(search(objetoDatosMovies.value).tobe(true));
 
 });
+
+//	TEST LOGOUT
+
+const logout = require(".main.js");
+test("Se comprueba si se ha borrado correctamente el JWT", () => {
+	expect ()
+})
+​
+​
+​
+// https://stackoverflow.com/questions/32911630/how-do-i-deal-with-localstorage-in-jest-tests
+​
+const localStorageMock = {
+	getItem: jest.fn(),
+	setItem: jest.fn(),
+	clear: jest.fn()
+  };
+  global.localStorage = localStorageMock;
+​
+const JWT = require(".main.js")
+const clearJWT = require(".main.js")
+
+test("Se comprieba si se ha borrado el JWT", () => {
+	
+	expect(localStorage.getItem).toBeCalledWith('token')
+	
+})
 
