@@ -14,9 +14,7 @@
 //login
 
 
-const checkPassword = require(".main.js");
-const checkUsers = require(".main.js");
-const popUp = require(".main.js");
+
 
 test("Aqui se valida el login", () => {
 
@@ -29,7 +27,6 @@ test("Aqui se valida el login", () => {
 
 // register
 
-const registerUser = require(".main.js");
 
 
 const user1 = {
@@ -43,12 +40,16 @@ const user2 = {
 	"password": "Test12*."
 };
 const user3 = {
-	"email": "test1aest",
+	"email": "",
 	"password": "Test12*."
 };
 const user4 = {
 	"email": "test1aest",
-	"password": "Test12*."
+	"password": "."
+};
+const user5 = {
+	"email": "",
+	"password": "."
 };
 const FavMovie = {
 	"title" : "algo",
@@ -77,19 +78,26 @@ const addMoviefun = require(".main.js");
 const CheckCreateMovieADM = require (".main.js");
 const deleteMovie = require(".main.js");
 
+//TEST DE LOGIN
+
 test("Aqui se valida el login", () => {
 	expect(checkPassword(user1.password).toBe(true));
 	expect(checkUsers(user2.email).toBe(true));
 	expect(popUp().toBe("string"));
 });
 
+//TEST DE REGISTER
 
 test("Aqui se valida el register", () => {
 	expect(registerUser("aa@aa.aa").toBe(false));
-	expect(registerUser(user1.value).toBe(false));
+	expect(registerUser(user1).toBe(false));
+	expect(registerUser(user2).toBe(false));
+	expect(registerUser(user3).toBe(false));
+	expect(registerUser(user4).toBe(false));
+	expect(registerUser(user5).toBe(false));
 	expect(registerUser().toBe(false));
 
-});
+})
 
 ///TEST DE CREATE MOVIE///
 
@@ -112,4 +120,55 @@ test("Aqui se valida El favorito al movie", () => {
 
 test("Aqui se valida el DeleteMovie", ()=>{
 	expect(deleteMovie(FavMovie)).tobe(true);
+<<<<<<< HEAD
 });
+=======
+
+});
+
+// /SEARCH
+
+const search = require(".main.js");
+const objetoDatosMovies = {
+	"title": "movie1",
+	"img": "www.url.com/img",
+	"year": "aaaa",
+	"director": "director",
+	"category": "category",
+	"duration": "120min"
+};
+
+test("Validamos nuestro search", () => {
+
+	expect(search(objetoDatosMovies.value).tobe(true));
+
+});
+
+//	TEST LOGOUT
+
+const logout = require(".main.js");
+test("Se comprueba si se ha borrado correctamente el JWT", () => {
+	expect ()
+})
+​
+​
+​
+// https://stackoverflow.com/questions/32911630/how-do-i-deal-with-localstorage-in-jest-tests
+​
+const localStorageMock = {
+	getItem: jest.fn(),
+	setItem: jest.fn(),
+	clear: jest.fn()
+  };
+  global.localStorage = localStorageMock;
+​
+const JWT = require(".main.js")
+const clearJWT = require(".main.js")
+
+test("Se comprieba si se ha borrado el JWT", () => {
+	
+	expect(localStorage.getItem).toBeCalledWith('token')
+	
+})
+
+>>>>>>> e95c8bd3d9aa50b89d65392d9a37dc95d9761d2e
