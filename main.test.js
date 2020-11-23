@@ -22,6 +22,7 @@ test('Aqui se valida el login', () => {
 
 const registerUser = require('.main.js');
 
+
 const user1 = {
 	email: "test1@test.com",
 	password: "Test12*."
@@ -36,4 +37,8 @@ test('Aqui se valida el register', () => {
 	expect(registerUser(user1.value).toBe(false));
 	expect(registerUser().toBe(false));
 })
+
+
+
+
 
