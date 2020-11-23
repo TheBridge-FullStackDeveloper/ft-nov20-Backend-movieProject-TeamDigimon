@@ -13,11 +13,32 @@
 
 //login
 
+
+const checkPassword = require(".main.js");
+const checkUsers = require(".main.js");
+const popUp = require(".main.js");
+
+test("Aqui se valida el login", () => {
+
+	expect(checkPassword(password.value).toBe(true));
+	expect(checkUsers(user.value).toBe(true));
+	expect(popUp().toBe("string"));
+});
+
+
+
+// register
+
+const registerUser = require(".main.js");
+
+
 const user1 = {
 	"email": "test1@test.com",
 	"password": "Test12*."
 };
 const user2 = {
+	"email": "test1aest.com",
+	"email": "test1aest",
 	"email": "test1aest.com",
 	"password": "Test12*."
 };
@@ -41,13 +62,23 @@ const FavMovie = {
 	"category" : "crimen",
 	"duration" : 200000
 };
+const NewMovie = {
+	"title" : "algo",
+	"img" : "nose.img",
+	"year": 2019,
+	"director" : "cameron diaz",
+	"category" : "crimen",
+	"duration" : 200000
+};
 
 const registerUser = require(".main.js");
 const checkPassword = require(".main.js");
 const checkUsers = require(".main.js");
 const popUp = require(".main.js");
 const IsthereFav = require(".main.js");
+const IsthereMovie = require(".main.js");
 const addMoviefun = require(".main.js");
+const addMovie = require (".main.js");
 const deleteMovie = require(".main.js");
 
 test("Aqui se valida el login", () => {
@@ -65,6 +96,31 @@ test("Aqui se valida el register", () => {
 	expect(registerUser(user4).toBe(false));
 	expect(registerUser(user5).toBe(false));
 	expect(registerUser().toBe(false));
+
+});
+
+///TEST DE CREATE MOVIE///
+
+test("Aqui se valida la nueva pelicula", () =>{
+	expect(addMovie(NewMovie).tobe(false))
+	expect(IsthereMovie(NewMovie).tobe(false));
+	expect(popUp().tobe("String"));
+
+});
+
+///// ADDMOVIE USER
+
+test("Aqui se valida El favorito al movie", () => {
+	expect(IsthereFav(FavMovie)).tobe(false);
+	expect(addMoviefun(FavMovie).tobe("added") );
+	expect(popUp().tobe("string"));
+});
+
+///////DeleteMovie//////////////////
+
+test("Aqui se valida el DeleteMovie", ()=>{
+	expect(deleteMovie(FavMovie)).tobe(true);
+
 });
 
 // /SEARCH
@@ -84,6 +140,3 @@ test("Validamos nuestro search", () => {
 	expect(search(objetoDatosMovies.value).tobe(true));
 
 });
-
-
-//
