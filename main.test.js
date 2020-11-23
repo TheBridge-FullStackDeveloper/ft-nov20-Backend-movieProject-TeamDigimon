@@ -11,6 +11,7 @@
 
 // a partir de aqui, tests:
 
+//login
 
 const user1 = {
 	"email": "test1@test.com",
@@ -18,6 +19,14 @@ const user1 = {
 };
 const user2 = {
 	"email": "test1aest.com",
+	"password": "Test12*."
+};
+const user3 = {
+	"email": "test1aest",
+	"password": "Test12*."
+};
+const user4 = {
+	"email": "test1aest",
 	"password": "Test12*."
 };
 const FavMovie = {
