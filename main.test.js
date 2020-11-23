@@ -60,4 +60,6 @@ test("Aqui se valida El favorito al movie", () => {
 
 ///////DeleteMovie//////////////////
 
-test;
+test("Aqui se valida el DeleteMovie", ()=>{
+	expect(deleteMovie(FavMovie)).tobe(true);
+});
