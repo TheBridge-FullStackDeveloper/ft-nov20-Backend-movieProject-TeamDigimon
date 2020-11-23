@@ -34,16 +34,24 @@ const user2 = {
 	"password": "Test12*."
 };
 const user3 = {
-	"email": "test1aest",
+	"email": "",
 	"password": "Test12*."
 };
 const user4 = {
 	"email": "test1aest",
-	"password": "Test12*."
+	"password": "."
+};
+const user5 = {
+	"email": "",
+	"password": "."
 };
 
 test("Aqui se valida el register", () => {
 	expect(registerUser("aa@aa.aa").toBe(false));
-	expect(registerUser(user1.value).toBe(false));
+	expect(registerUser(user1).toBe(false));
+	expect(registerUser(user2).toBe(false));
+	expect(registerUser(user3).toBe(false));
+	expect(registerUser(user4).toBe(false));
+	expect(registerUser(user5).toBe(false));
 	expect(registerUser().toBe(false));
 });
