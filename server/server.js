@@ -6,6 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const base64 = require("base-64");
 const crypto = require("crypto");
+require("dotenv").config();
 const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO public
 const server = express();
 const listenPort = 7777;
@@ -19,11 +20,13 @@ server.use(cors());
 
 // OAUTH GITHUB
 
-server.get("/", (req, res) => {
+server.get("/loginOAuth", (req, res) => {
 	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
-
 });
-console.log(process.env);
+
+server.get("/LoginGH", (req, res) => {
+	console.log(req.query);
+});
 
 ///////////////////////
 server.listen(listenPort, () => {
