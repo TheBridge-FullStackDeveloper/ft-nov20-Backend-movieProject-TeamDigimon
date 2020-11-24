@@ -62,15 +62,15 @@ const NewMovie = {
 	"duration" : 200000
 };
 
-const {registerUser} = require("./main.js");
-const {checkPassword} = require("./main.js");
-const {checkUsers} = require("./main.js");
-const {popUp} = require("./main.js");
-const {IsthereFav} = require("./main.js");
-const {IsthereMovie} = require("./main.js");
-const {addMoviefun} = require("./main.js");
-const {CheckCreateMovieADM} = require("./main.js");
-const {deleteMovie} = require("./main.js");
+const {registerUser} = require("./public/main.js");
+const {checkPassword} = require("./public/main.js");
+const {checkUsers} = require("./public/main.js");
+const {popUp} = require("./public/main.js");
+const {IsthereFav} = require("./public/main.js");
+const {IsthereMovie} = require("./public/main.js");
+const {addMoviefun} = require("./public/main.js");
+const {CheckCreateMovieADM} = require("./public/main.js");
+const {deleteMovie} = require("./public/main.js");
 
 //TEST DE LOGIN
 
@@ -119,7 +119,7 @@ test("Aqui se valida el DeleteMovie", ()=>{
 
 // /SEARCH
 
-const search = require("./main.js");
+const search = require("./public/main.js");
 const objetoDatosMovies = {
 	"title": "movie1",
 	"img": "www.url.com/img",
@@ -152,8 +152,8 @@ const localStorageMock = {
 };
 global.localStorage = localStorageMock;
 
-const {JWT} = require("./main.js");
-const {clearJWT} = require("./main.js");
+const {JWT} = require("./public/main.js");
+const {clearJWT} = require("./public/main.js");
 
 test("Se comprieba si se ha borrado el JWT", () => {
 
