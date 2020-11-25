@@ -25,7 +25,12 @@ server.get("/loginOAuth", (req, res) => {
 });
 
 server.get("/LoginGH", (req, res) => {
-	console.log(req.query);
+	// console.log(req.query);
+	if (req.query) {
+		res.send(req.query);
+	} else {
+		res.send(error);
+	}
 });
 
 ///////////////////////
