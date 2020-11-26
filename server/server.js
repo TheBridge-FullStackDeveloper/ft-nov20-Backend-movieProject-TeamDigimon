@@ -47,7 +47,7 @@ server.get("/redirectGH", async (req, res) => {
 	}
 });
 
-//Generar JWT con la función de Diego y meter nuestro userData
+////FALTAAAAA Generar JWT con la función de Diego y meter nuestro userData////
 
 async function createUserOnDB(userData) {
 	// meter el usuario en nuestra base de datos sql
@@ -113,52 +113,23 @@ client.connect(err => {
 });
 
 //////COGER PELICULAS DE API OMDB//////
-
+const API_KEY_OMBD = process.env.API_KEY_OMBD;
+// console.log(API_KEY_OMBD);
 
 server.get("/SearchMovies/:Title", (req, res) => {
 	let Title = req.params.Title;
 
 	if (Title !== null){
-
-		fetch(`http://www.omdbapi.com/?s=${Title}&apikey=4c909483`)
+		fetch(`http://www.omdbapi.com/?s=${Title}&apikey=${API_KEY_OMBD}`)
 			.then(response => response.json())
 			.then(data => {
-
+				console.log(data);
 				if (data.Search){
 					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data.Search});
 
 				} else {
 
-					try {
-						MongoClient.connect(url, (err, db) => {
-
-							if (err) {
-								throw err;
-							}
-
-							//MI  NOMBRE DE MONGO
-							let ObjectDB = db.db("DigimonMovies");
-
-
-							ObjectDB.collection("Movies").find({"title": {"$regex": `.*${Title}.*`}}, (err, result) => {
-
-								if (err) {
-									throw err;
-								}
-								if (result){
-									res.send({"msg":"Movies Found in MongoDB", "ResponseMongoDB" : ""});
-								} else {
-									res.send({"msg":"NOT Found in MongoDB"});
-								}
-								//Cierro base de datos de Mongo
-								db.close();
-							});
-						});
-
-					} catch (e){
-						return {"msg": "MongoDB error connection"};
-
-					}
+					SearchinMongo(Title);
 				}
 			})
 			.catch({"msg" : "Error connection with Omdb"});
@@ -167,8 +138,85 @@ server.get("/SearchMovies/:Title", (req, res) => {
 	}
 
 });
+server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
+	let filmId = req.params.filmId;
+	console.log(filmId);
+	if (filmId !== null){
+		fetch(`http://www.omdbapi.com/?i=${filmId}&apikey=${API_KEY_OMBD}`)
+			.then(response => {
+				console.log("entro");
+				response.json();
+			})
+			.then(data => {
+				console.log(data);
+				if (data.Title){
+					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data});
 
-///////////////////////
+				} else {
+					SearchinMongoId(filmId).then(result => {
+						if (ResponseMongoDB) {
+							res.send({});
+						} //Tenemos peli
+						else {
+							res.send({});
+						} //No funciona
+					});
+				}
+			})
+			.catch(() => {
+				SearchinMongoId(filmId).then(result => {
+					if (ResponseMongoDB) {
+						res.send({}); //Tenemos peli
+					} else {
+						res.send({}); //No funciona
+					}
+				});
+				res.send({"msg" : "Error connection with Omdb"});
+			});
+	} else {
+		res.send({"msg" : "Empty Title"});
+	}
+
+});
+
+
+function SearchinMongoId (filmId){
+	return new Promise((res) => {
+		try {
+			MongoClient.connect(uri, (err, db) => {
+
+				if (err) {
+					throw err;
+				}
+
+				//MI  NOMBRE DE MONGO
+				let ObjectDB = db.db("DigimonMovies");
+
+
+				ObjectDB.collection("Movies").find({"_id": filmId}, (err, result) => {
+
+					if (err) {
+						throw err;
+					}
+					if (result){
+						res({"msg":"Movies Found in MongoDB", "ResponseMongoDB" : ""});
+					} else {
+						res({"msg":"NOT Found in MongoDB"});
+					}
+					//Cierro base de datos de Mongo
+					db.close();
+				});
+			});
+
+		} catch (e){
+			res({"msg": "MongoDB error connection"});
+
+		}
+	});
+}
+
+
+///////////////////////SERVER LISTEN ON PORT ///////////////
 server.listen(listenPort, () => {
 	// eslint-disable-next-line no-console
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
