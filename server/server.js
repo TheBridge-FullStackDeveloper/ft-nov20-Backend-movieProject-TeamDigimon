@@ -150,6 +150,7 @@ client.connect(err => {
 	client.close();
 });
 
+
 //////COGER PELICULAS DE API OMDB//////
 const API_KEY_OMBD = process.env.API_KEY_OMBD;
 // console.log(API_KEY_OMBD);
@@ -160,18 +161,22 @@ server.get("/SearchMovies/:Title", (req, res) => {
 	if (Title !== null){
 		fetch(`http://www.omdbapi.com/?s=${Title}&apikey=${API_KEY_OMBD}`)
 			.then(response => response.json())
-			.then(data => {
+			.then(async data => {
 				console.log(data);
 				if (data.Search){
 					const movieData = data.Search.map(movie => {
-						const {Title, Year, "Id": imdbID, "Img": Poster} = movie;
-						return {Title, Year, "Id": `O_${Id}`, Img};
+						const {Title, Year, imdbID, Poster} = movie;
+						return {
+							"Title" : Title,
+							"Year" : Year,
+							"Id": `O_${imdbID}`,
+							"Img" : Poster
+						};
 					});
 					res.send({"movies" : movieData});
 
 				} else {
-
-					res.send(SearchinMongoTitle(Title));
+					res.send(await SearchinMongoTitle(Title));
 				}
 			})
 			.catch({"msg" : "Error connection with Omdb"});
@@ -181,7 +186,7 @@ server.get("/SearchMovies/:Title", (req, res) => {
 
 });
 
-server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
+server.get("/SearchExtra/:filmId", async (req, res) => {
 	//Nuestra id puede tener 2 variantes:
 	//	Mongo
 	//	OMDB
@@ -192,45 +197,29 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 	console.log(filmId);
 	if (filmId !== null){
 		const id = filmId.substr(2);
+		console.log("id =", id, "\nFilmID[0] =", filmId[0]);
 		switch (filmId[0]) {
 		case "M":
 			//Buscar en mongo
-			res.send(SearchinMongoId(filmId));
+			res.send(await SearchinMongoId(id));
 			break;
 		case "O":
 			fetch(`http://www.omdbapi.com/?i=${id}&apikey=${API_KEY_OMBD}`)
-				.then(response => {
-					response.json();
-				})
+				.then(response => response.json())
 				.then(data => {
 					console.log(data);
-					if (data.Search) {
-						const movieData = data.Search.map(movie => {
-							const {Title, Year, "Id": imdbID, "Img": Poster} = movie;
-							return {Title, Year, "Id": `O_${Id}`, Img};
-						});
+					if (data.Response === "True") {
+						const movieData = {
+							"Title" : data.Title,
+							"Year" : data.Year,
+							"Id": `O_${data.imdbID}`,
+							"Img" : data.Poster
+						};
 						res.send({"movies" : movieData});
 
-					} else {
-						SearchinMongoId(filmId).then(result => {
-							if (filmId) {
-								res.send(`M_ ${filmId}`);
-							} else {
-								res.send({"msg": "Film not found"});
-							}
-							//No funciona
-						});
 					}
 				})
-
-				.catch((data) => {
-					SearchinMongoId(id).then(result => {
-						if (filmId) {
-							res.send(`MO ${filmId}`); //Tenemos peli
-						} else {
-							res.send({"msg": "Film not found"}); //No funciona
-						}
-					});
+				.catch(() => {
 					res.send({"msg" : "Error connection with Omdb"});
 				});
 
@@ -257,24 +246,33 @@ function SearchinMongoTitle(Title){
 				let ObjectDB = db.db("DigimonMovies");
 
 
-				ObjectDB.collection("Movies").find({"Title": {"$regex": `.*${Title}.*`}}, (err, result) => {
-
-					if (err) {
-						throw err;
-					}
-					if (result){
-						res({"msg":"Movies Found in MongoDB", "ResponseMongoDB" : ""});
-					} else {
-						res({"msg":"NOT Found in MongoDB"});
-					}
-					//Cierro base de datos de Mongo
-					db.close();
-				});
+				ObjectDB.collection("Movies").find({"Title": new RegExp(`.*${Title}`, "i")})
+					.toArray((err, result) => {
+						if (err) {
+							throw err;
+						}
+						console.log(result);
+						if (result.length){
+							let movies = result.map(film => {
+								return {
+									// eslint-disable-next-line no-underscore-dangle
+									"id": `M_${film._id}`,
+									"Title": film.Title,
+									"Img": film.Img,
+									"Year": film.Year
+								};
+							});
+							res({movies});
+						} else {
+							res({"msg":"NOT Found in MongoDB"});
+						}
+						//Cierro base de datos de Mongo
+						db.close();
+					});
 			});
 
 		} catch (e){
-			res({"msg": "MongoDB error connection"});
-
+			res.send("error");
 		}
 	});
 }
