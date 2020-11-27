@@ -175,11 +175,15 @@ server.get("/SearchMovies/:Title", (req, res) => {
 			.then(data => {
 				console.log(data);
 				if (data.Search){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data.Search, "id": `O_${data.Search.imdbID}`});
+					const movieData = data.Search.map(movie => {
+						const {Title, Year, "Id": imdbID, "Img": Poster} = movie;
+						return {Title, Year, "Id": `O_${Id}`, Img};
+					});
+					res.send({"movies" : movieData});
 
 				} else {
 
-					SearchinMongoTitle(Title);
+					res.send(SearchinMongoTitle(Title));
 				}
 			})
 			.catch({"msg" : "Error connection with Omdb"});
@@ -199,37 +203,53 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 	let filmId = req.params.filmId;
 	console.log(filmId);
 	if (filmId !== null){
-		fetch(`http://www.omdbapi.com/?i=${filmId}&apikey=${API_KEY_OMBD}`)
-			.then(response => {
-				console.log("entro");
-				response.json();
-			})
-			.then(data => {
-				console.log(data);
-				if (data.Title){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data, "Id": `O_${filmId}`);
+		const id = filmId.substr(2);
+		switch (filmId[0]) {
+		case "M":
+			//Buscar en mongo
+			res.send(SearchinMongoId(filmId));
+			break;
+		case "O":
+			fetch(`http://www.omdbapi.com/?i=${id}&apikey=${API_KEY_OMBD}`)
+				.then(response => {
+					response.json();
+				})
+				.then(data => {
+					console.log(data);
+					if (data.Search) {
+						const movieData = data.Search.map(movie => {
+							const {Title, Year, "Id": imdbID, "Img": Poster} = movie;
+							return {Title, Year, "Id": `O_${Id}`, Img};
+						});
+						res.send({"movies" : movieData});
 
-				} else {
-					SearchinMongoId(filmId).then(result => {
-						if (filmId) {
-							res.send(`M_ ${filmId}`);
-						} else {
-							res.send({"msg": "Film not found"});
-						}
-						//No funciona
-					});
-				}
-			})
-			.catch((data) => {
-				SearchinMongoId(filmId).then(result => {
-					if (filmId) {
-						res.send(`MO ${filmId}`); //Tenemos peli
 					} else {
-						res.send({"msg": "Film not found"}); //No funciona
+						SearchinMongoId(filmId).then(result => {
+							if (filmId) {
+								res.send(`M_ ${filmId}`);
+							} else {
+								res.send({"msg": "Film not found"});
+							}
+							//No funciona
+						});
 					}
+				})
+
+				.catch((data) => {
+					SearchinMongoId(id).then(result => {
+						if (filmId) {
+							res.send(`MO ${filmId}`); //Tenemos peli
+						} else {
+							res.send({"msg": "Film not found"}); //No funciona
+						}
+					});
+					res.send({"msg" : "Error connection with Omdb"});
 				});
-				res.send({"msg" : "Error connection with Omdb"});
-			});
+
+			break;
+		default:
+			res.send({"msg":"Error Chungo"});
+		}
 	} else {
 		res.send({"msg" : "Empty Title"});
 	}
