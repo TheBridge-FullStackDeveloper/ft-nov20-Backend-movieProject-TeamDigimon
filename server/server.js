@@ -36,6 +36,7 @@ server.get("/LoginGH", (req, res) => {
 });
 ////// MYSQL CONNECTION
 let mysql = require("mysql");
+const { response } = require("express");
 let connection = mysql.createConnection({
 	"host"     : "34.105.216.53",
 	"user"     : "team-digimon",
@@ -174,7 +175,7 @@ server.get("/SearchMovies/:Title", (req, res) => {
 			.then(data => {
 				console.log(data);
 				if (data.Search){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data.Search});
+					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data.Search, "id": `O_${data.Search.imdbID}`});
 
 				} else {
 
@@ -206,25 +207,25 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 			.then(data => {
 				console.log(data);
 				if (data.Title){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data});
+					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data, "Id": `O_${filmId}`);
 
 				} else {
 					SearchinMongoId(filmId).then(result => {
-						if (ResponseMongoDB) {
-							res.send({});
-						} //Tenemos peli
-						else {
-							res.send({});
-						} //No funciona
+						if (filmId) {
+							res.send(`M_ ${filmId}`);
+						} else {
+							res.send({"msg": "Film not found"});
+						}
+						//No funciona
 					});
 				}
 			})
-			.catch(() => {
+			.catch((data) => {
 				SearchinMongoId(filmId).then(result => {
-					if (ResponseMongoDB) {
-						res.send({}); //Tenemos peli
+					if (filmId) {
+						res.send(`MO ${filmId}`); //Tenemos peli
 					} else {
-						res.send({}); //No funciona
+						res.send({"msg": "Film not found"}); //No funciona
 					}
 				});
 				res.send({"msg" : "Error connection with Omdb"});
