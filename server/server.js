@@ -23,17 +23,6 @@ server.use(bodyParser.json());
 server.use(cors());
 server.use(cookieParser());
 // ENDPOINTS Y COSAS NAZIS AQUÍ:
-
-// OAUTH GITHUB
-
-
-server.get("/loginOAuth", (req, res) => {
-	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
-});
-
-server.get("/LoginGH", (req, res) => {
-	console.log(req.query);
-});
 ////// MYSQL CONNECTION
 let mysql = require("mysql");
 let connection = mysql.createConnection({
@@ -61,18 +50,17 @@ connection.query("SELECT * FROM users", ["team-digimon"], function (error, resul
 	}
 });
 
-// function insertmovie(){
+// OAUTH GITHUB
 
-// let queryPrueba = [["a@a.es", "cosasbellas", "seller.img", " 20-20-20", "Peter languila"], ["a2@a.es", "co2sasbellas", "se2ller.img", " 20-20-20", "Pet2er languila"]];
-// connection.query("INSERT INTO users(email,title,img,premier,director) VALUES ?", queryPrueba, {function (error, results) {
-// 	if (error) {
-// 		throw error;
-// 	} else {
-// 		console.log(results.insertId);
-// 	}
-// }
-// });
-// insertmovie();
+
+server.get("/loginOAuth", (req, res) => {
+	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
+});
+
+server.get("/LoginGH", (req, res) => {
+	console.log(req.query);
+});
+
 
 server.get("/login/github", (req, res) => {
 	const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:user,user:email`;
@@ -193,8 +181,8 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 	//	Mongo
 	//	OMDB
 	//Para poder distinguirlas:
-	//	M_id
-	//	O_id
+	//	M_
+	//	O_
 	let filmId = req.params.filmId;
 	console.log(filmId);
 	if (filmId !== null){
@@ -236,7 +224,7 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 });
 
 
-function SearchinMongoTitle (Title){
+function SearchinMongoTitle(Title){
 
 	return new Promise((res) => {
 		try {
