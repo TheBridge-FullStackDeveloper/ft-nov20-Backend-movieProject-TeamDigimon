@@ -26,6 +26,8 @@ server.use(cookieParser());
 ////// MYSQL CONNECTION
 let mysql = require("mysql");
 const { response } = require("express");
+const { formatWithOptions } = require("util");
+const { ObjectID } = require("mongodb");
 let connection = mysql.createConnection({
 	"host"     : "34.105.216.53",
 	"user"     : "team-digimon",
@@ -58,11 +60,6 @@ server.get("/loginOAuth", (req, res) => {
 	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
 });
 
-server.get("/LoginGH", (req, res) => {
-	console.log(req.query);
-});
-
-
 server.get("/login/github", (req, res) => {
 	const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:user,user:email`;
 	res.redirect(githubAuthUrl);
@@ -72,24 +69,19 @@ server.get("/redirectGH", async (req, res) => {
 
 	if (req.query.code) {
 		const requestCode = req.query.code;
-
 		if (requestCode) {
 			const token = await getTokenGH(requestCode);
 			const userData = await getUserData(token);
-			// Comprobar si está en el database sql
-			res.send(userData);
-
-		} else {
-			res.send({"msg": "Error"});
+			let newUser = {"user": userData.login, "avatar": userData.avatarUrl, "email" : userData.email};
+			res.send(newUser);
+			console.log(newUser);
 		}
+
+
+	} else {
+		res.send({"msg": "Error"});
 	}
 });
-
-////FALTAAAAA Generar JWT con la función de Diego y meter nuestro userData////
-
-async function createUserOnDB(userData) {
-	// meter el usuario en nuestra base de datos sql
-}
 
 async function getTokenGH (code) {
 	// res.redirect("/index.html");
@@ -115,7 +107,6 @@ async function getTokenGH (code) {
 	}
 	return {"msg": "Error"};
 }
-
 async function getUserEmail(token) {
 	const res = await fetch("https://api.github.com/user/emails", {
 		"headers": {
@@ -126,8 +117,8 @@ async function getUserEmail(token) {
 	const emails = await res.json();
 	return emails[0].email;
 }
-
 async function getUserData(token) {
+
 	const res = await fetch("https://api.github.com/user", {
 		"headers": {
 			"Authorization": token,
@@ -136,6 +127,24 @@ async function getUserData(token) {
 	});
 	const userData = await res.json();
 	const email = await getUserEmail(token);
+
+	///JWT
+	const Payload = {
+		"user" : req.body.user,
+		"profile" : "user",
+		"iat" : new Date()
+	};
+	const jwt = JWT(Payload);
+	//Grant access based on profile
+	switch (result[0].USER_PROFILE) {
+	case "admin":
+	{
+		//Access as administrator
+		res.cookie("JWT", jwt, {"httpOnly" : true})
+			.send({"res" : "1", "msg" : "admin"});
+		break;
+	}
+	}
 	return {"login": userData.login, "avatarUrl": userData.avatar_url, email};
 	// data; Tenemos los datos de usuario menos email
 }
@@ -150,6 +159,58 @@ client.connect(err => {
 	client.close();
 });
 
+///BORRAR PELICULAS de MONGODB////
+
+server.post("/DeleteMovieMongo/", (req, res) => {
+	try {
+		MongoClient.connect(uri, (err, db) =>{
+			if (err){
+				throw err;
+			}
+			let ObjectDB = db.db("DigimonMovies");
+			ObjectDB.collection("Movies").deleteOne(
+				{"_id" : new ObjectID(req.body._id)}, (err, result) => {
+					if (err){
+						throw err;
+					}
+					if (result){
+						res.send({"msg" : "Movie deleted"});
+					} else {
+						res.send({"msg": "NOT deleted"});
+					}
+					db.close();
+				});
+		});
+	} catch (e){
+		return { "msg" : "MongoDB error connection"};
+	}
+});
+
+///GET PELICULA de MONGODB////
+server.get("/GetMovieMongo", (req, res) => {
+	try {
+		MongoClient.connect(uri, (err, db) =>{
+			if (err){
+				throw err;
+			}
+			let ObjectDB = db.db("DigimonMovies");
+			ObjectDB.collection("Movies").find({"_id":new ObjectID(req.body._id)})
+				.toArray((err, result) => {
+					if (err){
+						throw err;
+					}
+					if (result){
+						res.send(result);
+					} else {
+						res.send({"msg": "Movie NOT found"});
+					}
+					db.close();
+				});
+		});
+	} catch (e){
+		return { "msg":"MongoDB error connection"};
+	}
+});
 
 //////COGER PELICULAS DE API OMDB//////
 const API_KEY_OMBD = process.env.API_KEY_OMBD;
@@ -196,7 +257,7 @@ server.get("/SearchExtra/:filmId", async (req, res) => {
 	let filmId = req.params.filmId;
 	console.log(filmId);
 	if (filmId !== null){
-		const id = filmId.substr(2);
+		const id = filmId.substring(2);
 		console.log("id =", id, "\nFilmID[0] =", filmId[0]);
 		switch (filmId[0]) {
 		case "M":
@@ -279,33 +340,28 @@ function SearchinMongoTitle(Title){
 function SearchinMongoId (filmId){
 	return new Promise((res) => {
 		try {
-			MongoClient.connect(uri, (err, db) => {
-
-				if (err) {
+			MongoClient.connect(uri, (err, db) =>{
+				if (err){
 					throw err;
 				}
 				let ObjectDB = db.db("DigimonMovies");
-
-
-				ObjectDB.collection("Movies").find({"_id": filmId}, (err, result) => {
-
-					if (err) {
-						throw err;
-					}
-					if (result){
-						res({"msg":"Movies Found in MongoDB", "ResponseMongoDB" : ""});
-					} else {
-						res({"msg":"NOT Found in MongoDB"});
-					}
-					//Cierro base de datos de Mongo
-					db.close();
-				});
+				ObjectDB.collection("Movies").find({"_id":new ObjectID(req.body._id)})
+					.toArray((err, result) => {
+						if (err){
+							throw err;
+						}
+						if (result){
+							res.send(result);
+						} else {
+							res.send({"msg": "Movie NOT found"});
+						}
+						db.close();
+					});
 			});
-
 		} catch (e){
-			res({"msg": "MongoDB error connection"});
-
+			return { "msg":"MongoDB error connection"};
 		}
+
 	});
 }
 
