@@ -13,7 +13,7 @@ const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO pub
 const server = express();
 const listenPort = 7777;
 const client_id = "4ef49b85eefcbcbd9302";
-
+const mysql = require("mysql");
 const CLIENT_ID = process.env.CLIENT_ID;
 const GH_SECRET = process.env.GH_SECRET;
 
@@ -22,9 +22,24 @@ server.use(bodyParser.urlencoded({"extended":false}));
 server.use(bodyParser.json());
 server.use(cors());
 server.use(cookieParser());
+
+////////////////FUNCTIONS/////////////////////////////////////////
+function SQLquery(string, options = {}) {
+	return new Promise((resolve, reject) => {
+		connection.query(string, options, (err, response) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(response);
+			}
+		});
+	});
+}
+
+
 // ENDPOINTS Y COSAS NAZIS AQUÍ:
 
-// OAUTH GITHUB
+/////////////////////////////////////////////////////////////////77 OAUTH GITHUB
 
 
 server.get("/loginOAuth", (req, res) => {
@@ -34,8 +49,11 @@ server.get("/loginOAuth", (req, res) => {
 server.get("/LoginGH", (req, res) => {
 	console.log(req.query);
 });
-////// MYSQL CONNECTION
-let mysql = require("mysql");
+
+
+/////////////////////////////////// MYSQL CONNECTION////////////////////////////////
+
+
 let connection = mysql.createConnection({
 	"host"     : "34.105.216.53",
 	"user"     : "team-digimon",
@@ -52,29 +70,19 @@ connection.connect(function(err) {
 	console.log(`connected as id ${ connection.threadId}`);
 });
 
-connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields) {
 
-	if (error) {
-		throw error;
-	} else {
-		console.log(results);
-	}
-});
+//////////////////////bring all the conections from mysql///////////////////////////////////////////
+function BringMeAll(){
+	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results) {
 
-// function insertmovie(){
-
-// let queryPrueba = [["a@a.es", "cosasbellas", "seller.img", " 20-20-20", "Peter languila"], ["a2@a.es", "co2sasbellas", "se2ller.img", " 20-20-20", "Pet2er languila"]];
-// connection.query("INSERT INTO users(email,title,img,premier,director) VALUES ?", queryPrueba, {function (error, results) {
-// 	if (error) {
-// 		throw error;
-// 	} else {
-// 		console.log(results.insertId);
-// 	}
-// }
-// });
-// insertmovie();
-
-server.get("/login/github", (req, res) => {
+		if (error) {
+			throw error;
+		} else {
+			console.log(results);
+		}
+	});
+}
+server.get("/login/github", (res) => {
 	const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:user,user:email`;
 	res.redirect(githubAuthUrl);
 });
@@ -94,6 +102,27 @@ server.get("/redirectGH", async (req, res) => {
 			res.send({"msg": "Error"});
 		}
 	}
+});
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////ADDMOVIE//////////////////////////////////////////////////////////////////////////////
+
+server.get("/addmovie", async (req, res)=>{
+	let {user, favmovie} = req.body;
+	SQLquery("SELECT iduser FROM users WHERE Email = ?", [user])
+		.then(
+			(result)=>{
+				console.log(result);
+				SQLquery("INSERT INTO favMovies (idusers,idFilm) VALUES (?, ?)", [result.iduser, favmovie])
+					.then(result => res.send(result));
+			}
+		)
+		.catch(err => res.send(err));
+});
+//////////////////////////////////////////////////////////////////////////////////////////////////////////DELETEMOVIE//////////////////////////////////////////////////////////////////////////////////////////
+
+server.get("/deletemovie", async (req, res)=>{
+	let {user, favmovie} = req.body;
+	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
+		.then(result =>res.send(result));
 });
 
 ////FALTAAAAA Generar JWT con la función de Diego y meter nuestro userData////
@@ -302,8 +331,10 @@ function SearchinMongoId (filmId){
 	});
 }
 
+//////////////////////////ADD MOVIE///////////////
 ///////////////////////SERVER LISTEN ON PORT ///////////////
 server.listen(listenPort, () => {
 	// eslint-disable-next-line no-console
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
 });
+BringMeAll();
