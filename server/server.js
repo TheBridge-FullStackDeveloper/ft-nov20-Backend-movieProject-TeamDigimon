@@ -13,7 +13,7 @@ const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO pub
 const server = express();
 const listenPort = 7777;
 const client_id = "4ef49b85eefcbcbd9302";
-
+const mysql = require("mysql");
 const CLIENT_ID = process.env.CLIENT_ID;
 const GH_SECRET = process.env.GH_SECRET;
 
@@ -22,7 +22,20 @@ server.use(bodyParser.urlencoded({"extended":false}));
 server.use(bodyParser.json());
 server.use(cors());
 server.use(cookieParser());
-// ENDPOINTS Y COSAS NAZIS AQUÍ:
+
+/////////////////////////////////// MYSQL CONNECTION////////////////////////////////
+////////////////FUNCTIONS/////////////////////////////////////////
+function SQLquery(string, options = {}) {
+	return new Promise((resolve, reject) => {
+		connection.query(string, options, (err, response) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(response);
+			}
+		});
+	});
+}
 ////// MYSQL CONNECTION
 let mysql = require("mysql");
 const { response } = require("express");
@@ -44,16 +57,45 @@ connection.connect(function(err) {
 	console.log(`connected as id ${ connection.threadId}`);
 });
 
-connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields) {
 
-	if (error) {
-		throw error;
-	} else {
-		console.log(results);
-	}
+//////////////////////bring all the conections from mysql///////////////////////////////////////////
+function BringMeAll(){
+	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results) {
+		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields) {
+
+			if (error) {
+				throw error;
+			} else {
+				console.log(results);
+			}
+		});
+///////////////////////////////////////////////////////ADDMOVIE//////////////////////////////////////////////////////////////////////////////
+
+server.get("/addmovie", async (req, res)=>{
+	let {user, favmovie} = req.body;
+	SQLquery("SELECT iduser FROM users WHERE Email = ?", [user])
+		.then(
+			(result)=>{
+				SQLquery("INSERT INTO favMovies (idusers,idFilm) VALUES (?, ?)", [result.iduser, favmovie])
+					.then(result => res.send(result));
+			}
+		)
+		.catch(err => res.send(err));
+});
+//////////////////////////////////////////////////////////////////////DELETEMOVIE/////////////////////////////////////////////////////////////////
+
+server.get("/deletemovie", async (req, res)=>{
+	let {user, favmovie} = req.body;
+	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
+		.then(result =>res.send(result));
 });
 
-// OAUTH GITHUB
+
+	} else {
+		res.send({"msg": "Error"});
+	}
+});
+///////////////////////////////////////// OAUTH GITHUB/////////////////////////////////////////
 
 
 server.get("/loginOAuth", (req, res) => {
@@ -76,13 +118,8 @@ server.get("/redirectGH", async (req, res) => {
 			res.send(newUser);
 			console.log(newUser);
 		}
-
-
-	} else {
-		res.send({"msg": "Error"});
 	}
 });
-
 async function getTokenGH (code) {
 	// res.redirect("/index.html");
 	if (code) {
@@ -148,7 +185,10 @@ async function getUserData(token) {
 	return {"login": userData.login, "avatarUrl": userData.avatar_url, email};
 	// data; Tenemos los datos de usuario menos email
 }
-///////CONEXION CON MONGO VIA NATIVE DRIVERS//////////
+
+
+
+///////CONEXION CON MONGO VIA NATIVE DRIVERS////////////////////MOOOOOOONGOOOOOOO//////////////////////////////////////////
 
 const MongoClient = require("mongodb").MongoClient;
 const uri = "mongodb+srv://Thedigimonbridge20:Thedigimonbridge20@moviesdigimon.gowkl.mongodb.net/MoviesDigimon?retryWrites=true&w=majority";
@@ -212,7 +252,7 @@ server.get("/GetMovieMongo", (req, res) => {
 	}
 });
 
-//////COGER PELICULAS DE API OMDB//////
+//////COGER PELICULAS DE API OMDB////////////////////////////O-M-D-B MOVIES/////////////////////////////////////////////////////
 const API_KEY_OMBD = process.env.API_KEY_OMBD;
 // console.log(API_KEY_OMBD);
 
@@ -370,3 +410,5 @@ server.listen(listenPort, () => {
 	// eslint-disable-next-line no-console
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
 });
+
+BringMeAll();
