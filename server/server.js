@@ -38,8 +38,7 @@ function SQLquery(string, options = {}) {
 
 
 // ENDPOINTS Y COSAS NAZIS AQUÍ:
-
-/////////////////////////////////////////////////////////////////77 OAUTH GITHUB
+/////////////////////////////////////////////////////////////////77 OAUTH GITHUB//////////////////////
 
 
 server.get("/loginOAuth", (req, res) => {
@@ -53,6 +52,8 @@ server.get("/LoginGH", (req, res) => {
 
 /////////////////////////////////// MYSQL CONNECTION////////////////////////////////
 
+
+////// MYSQL CONNECTION
 
 let connection = mysql.createConnection({
 	"host"     : "34.105.216.53",
@@ -74,6 +75,26 @@ connection.connect(function(err) {
 //////////////////////bring all the conections from mysql///////////////////////////////////////////
 function BringMeAll(){
 	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results) {
+		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields) {
+
+			if (error) {
+				throw error;
+			} else {
+				console.log(results);
+			}
+		});
+
+		// OAUTH GITHUB
+
+
+		server.get("/loginOAuth", ( res) => {
+			res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
+		});
+
+		server.get("/LoginGH", (req) => {
+			console.log(req.query);
+		});
+
 
 		if (error) {
 			throw error;
@@ -110,7 +131,6 @@ server.get("/addmovie", async (req, res)=>{
 	SQLquery("SELECT iduser FROM users WHERE Email = ?", [user])
 		.then(
 			(result)=>{
-				console.log(result);
 				SQLquery("INSERT INTO favMovies (idusers,idFilm) VALUES (?, ?)", [result.iduser, favmovie])
 					.then(result => res.send(result));
 			}
@@ -190,6 +210,7 @@ client.connect(err => {
 	client.close();
 });
 
+
 //////COGER PELICULAS DE API OMDB//////
 const API_KEY_OMBD = process.env.API_KEY_OMBD;
 // console.log(API_KEY_OMBD);
@@ -200,14 +221,22 @@ server.get("/SearchMovies/:Title", (req, res) => {
 	if (Title !== null){
 		fetch(`http://www.omdbapi.com/?s=${Title}&apikey=${API_KEY_OMBD}`)
 			.then(response => response.json())
-			.then(data => {
+			.then(async data => {
 				console.log(data);
 				if (data.Search){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data.Search});
+					const movieData = data.Search.map(movie => {
+						const {Title, Year, imdbID, Poster} = movie;
+						return {
+							"Title" : Title,
+							"Year" : Year,
+							"Id": `O_${imdbID}`,
+							"Img" : Poster
+						};
+					});
+					res.send({"movies" : movieData});
 
 				} else {
-
-					SearchinMongoTitle(Title);
+					res.send(await SearchinMongoTitle(Title));
 				}
 			})
 			.catch({"msg" : "Error connection with Omdb"});
@@ -217,47 +246,47 @@ server.get("/SearchMovies/:Title", (req, res) => {
 
 });
 
-server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
+server.get("/SearchExtra/:filmId", async (req, res) => {
 	//Nuestra id puede tener 2 variantes:
 	//	Mongo
 	//	OMDB
 	//Para poder distinguirlas:
-	//	M_id
-	//	O_id
+	//	M_
+	//	O_
 	let filmId = req.params.filmId;
 	console.log(filmId);
 	if (filmId !== null){
-		fetch(`http://www.omdbapi.com/?i=${filmId}&apikey=${API_KEY_OMBD}`)
-			.then(response => {
-				console.log("entro");
-				response.json();
-			})
-			.then(data => {
-				console.log(data);
-				if (data.Title){
-					res.send({"msg" : "Omdb Movies Found", "MoviesOmdb" : data});
+		const id = filmId.substr(2);
+		console.log("id =", id, "\nFilmID[0] =", filmId[0]);
+		switch (filmId[0]) {
+		case "M":
+			//Buscar en mongo
+			res.send(await SearchinMongoId(id));
+			break;
+		case "O":
+			fetch(`http://www.omdbapi.com/?i=${id}&apikey=${API_KEY_OMBD}`)
+				.then(response => response.json())
+				.then(data => {
+					console.log(data);
+					if (data.Response === "True") {
+						const movieData = {
+							"Title" : data.Title,
+							"Year" : data.Year,
+							"Id": `O_${data.imdbID}`,
+							"Img" : data.Poster
+						};
+						res.send({"movies" : movieData});
 
-				} else {
-					SearchinMongoId(filmId).then(result => {
-						if (ResponseMongoDB) {
-							res.send({});
-						} //Tenemos peli
-						else {
-							res.send({});
-						} //No funciona
-					});
-				}
-			})
-			.catch(() => {
-				SearchinMongoId(filmId).then(result => {
-					if (ResponseMongoDB) {
-						res.send({}); //Tenemos peli
-					} else {
-						res.send({}); //No funciona
 					}
+				})
+				.catch(() => {
+					res.send({"msg" : "Error connection with Omdb"});
 				});
-				res.send({"msg" : "Error connection with Omdb"});
-			});
+
+			break;
+		default:
+			res.send({"msg":"Error Chungo"});
+		}
 	} else {
 		res.send({"msg" : "Empty Title"});
 	}
@@ -265,7 +294,7 @@ server.get("/SearchMovieInfoExtra/:filmId", (req, res) => {
 });
 
 
-function SearchinMongoTitle (Title){
+function SearchinMongoTitle(Title){
 
 	return new Promise((res) => {
 		try {
@@ -277,24 +306,33 @@ function SearchinMongoTitle (Title){
 				let ObjectDB = db.db("DigimonMovies");
 
 
-				ObjectDB.collection("Movies").find({"Title": {"$regex": `.*${Title}.*`}}, (err, result) => {
-
-					if (err) {
-						throw err;
-					}
-					if (result){
-						res({"msg":"Movies Found in MongoDB", "ResponseMongoDB" : ""});
-					} else {
-						res({"msg":"NOT Found in MongoDB"});
-					}
-					//Cierro base de datos de Mongo
-					db.close();
-				});
+				ObjectDB.collection("Movies").find({"Title": new RegExp(`.*${Title}`, "i")})
+					.toArray((err, result) => {
+						if (err) {
+							throw err;
+						}
+						console.log(result);
+						if (result.length){
+							let movies = result.map(film => {
+								return {
+									// eslint-disable-next-line no-underscore-dangle
+									"id": `M_${film._id}`,
+									"Title": film.Title,
+									"Img": film.Img,
+									"Year": film.Year
+								};
+							});
+							res({movies});
+						} else {
+							res({"msg":"NOT Found in MongoDB"});
+						}
+						//Cierro base de datos de Mongo
+						db.close();
+					});
 			});
 
 		} catch (e){
-			res({"msg": "MongoDB error connection"});
-
+			res.send("error");
 		}
 	});
 }
