@@ -37,7 +37,6 @@ function SQLquery(string, options = {}) {
 	});
 }
 ////// MYSQL CONNECTION
-let mysql = require("mysql");
 const { response } = require("express");
 const { formatWithOptions } = require("util");
 const { ObjectID } = require("mongodb");
@@ -60,15 +59,17 @@ connection.connect(function(err) {
 
 //////////////////////bring all the conections from mysql///////////////////////////////////////////
 function BringMeAll(){
-	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results) {
-		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields) {
-
+	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results){
+		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields){
 			if (error) {
 				throw error;
 			} else {
 				console.log(results);
 			}
 		});
+	});
+}
+
 ///////////////////////////////////////////////////////ADDMOVIE//////////////////////////////////////////////////////////////////////////////
 
 server.get("/addmovie", async (req, res)=>{
@@ -89,12 +90,10 @@ server.get("/deletemovie", async (req, res)=>{
 	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
 		.then(result =>res.send(result));
 });
-
-
-	} else {
-		res.send({"msg": "Error"});
-	}
-});
+// } else {
+// 	res.send({"msg": "Error"});
+// }
+// });
 ///////////////////////////////////////// OAUTH GITHUB/////////////////////////////////////////
 
 
@@ -185,7 +184,6 @@ async function getUserData(token) {
 	return {"login": userData.login, "avatarUrl": userData.avatar_url, email};
 	// data; Tenemos los datos de usuario menos email
 }
-
 
 
 ///////CONEXION CON MONGO VIA NATIVE DRIVERS////////////////////MOOOOOOONGOOOOOOO//////////////////////////////////////////
@@ -333,7 +331,6 @@ server.get("/SearchExtra/:filmId", async (req, res) => {
 	}
 
 });
-
 
 function SearchinMongoTitle(Title){
 
