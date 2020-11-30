@@ -36,8 +36,6 @@ function SQLquery(string, options = {}) {
 	});
 }
 ////// MYSQL CONNECTION
-const { response } = require("express");
-const { formatWithOptions } = require("util");
 const { ObjectID } = require("mongodb");
 let connection = mysql.createConnection({
 	"host"     : "34.105.216.53",
@@ -260,7 +258,6 @@ server.get("/SearchMovies/:Title", (req, res) => {
 		fetch(`http://www.omdbapi.com/?s=${Title}&apikey=${API_KEY_OMBD}`)
 			.then(response => response.json())
 			.then(async data => {
-				console.log(data);
 				if (data.Search){
 					const movieData = data.Search.map(movie => {
 						const {Title, Year, imdbID, Poster} = movie;
