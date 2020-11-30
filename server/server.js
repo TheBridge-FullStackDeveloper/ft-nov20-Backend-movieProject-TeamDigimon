@@ -27,6 +27,8 @@ server.use(cookieParser());
 
 /////////////////////////////////// MYSQL CONNECTION////////////////////////////////
 ////////////////FUNCTIONS/////////////////////////////////////////
+
+///////////////////////QUERY
 function SQLquery(string, options = {}) {
 	return new Promise((resolve, reject) => {
 		connection.query(string, options, (err, response) => {
@@ -38,6 +40,22 @@ function SQLquery(string, options = {}) {
 		});
 	});
 }
+
+//////////////////AddUSERS
+function addUsers(user, password, rules){
+	return new Promise((resolve, reject)=>{
+		SQLquery("SELECT * FROM users WHERE Email = ?", user)
+			.then(	()=>{
+				("INSERT INTO users (Email,pass,rules) VALUES (?, ?)", [user, password, rules])
+					.then(result => resolve(result))
+					.catch(err => console.log(err));
+			}
+			)
+			.catch(() => reject("ya exite"));
+	});
+
+}
+
 ////// MYSQL CONNECTION
 const { ObjectID } = require("mongodb");
 let connection = mysql.createConnection({
@@ -59,16 +77,16 @@ connection.connect(function(err) {
 
 //////////////////////bring all the conections from mysql///////////////////////////////////////////
 function BringMeAll(){
-	connection.query("SELECT * FROM users", ["team-digimon"], () => {
-		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results){
-			if (error) {
-				throw error;
-			} else {
-				console.log(results);
-			}
-		});
+	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results){
+		if (error) {
+			throw error;
+		} else {
+			console.log(results);
+		}
 	});
+
 }
+
 
 ///////////////////////////////////////////////////////ADDMOVIE//////////////////////////////////////////////////////////////////////////////
 
@@ -196,7 +214,7 @@ async function getUserData(token) {
 const MongoClient = require("mongodb").MongoClient;
 const uri = "mongodb+srv://Thedigimonbridge20:Thedigimonbridge20@moviesdigimon.gowkl.mongodb.net/MoviesDigimon?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { "useNewUrlParser": true, "useUnifiedTopology": true });
-client.connect(err => {
+client.connect(() => {
 	// const collection = client.db("test").collection("devices");
 	// perform actions on the collection object
 	client.close();
@@ -297,7 +315,7 @@ server.get("/SearchExtra/:filmId", async (req, res) => {
 	//	M_
 	//	O_
 	let filmId = req.params.filmId;
-	console.log(filmId);
+
 	if (filmId !== null){
 		const id = filmId.substring(2);
 		console.log("id =", id, "\nFilmID[0] =", filmId[0]);
@@ -412,5 +430,56 @@ server.listen(listenPort, () => {
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
 });
 
+
+//////////////showMeMovie/////////////////////////////////////////////
+server.get("/showMyMovies", async (req, res)=>{
+	let {user} = req.body;
+	SQLquery("SELECT iduser FROM users WHERE Email = ?", [user])
+		.then(
+			(result)=>{
+				console.log(result[0].iduser);
+				SQLquery("SELECT idfilm FROM favMovies WHERE idusers = ?", [result[0].iduser])
+					.then(result =>{
+						console.log(result);
+
+						result.map(res, i =>{
+							console.log(res);
+							let rest = res[i].idfilm;
+							let wheretofind = rest.substring(0, 2);
+							if (wheretofind === "m-"){
+								MongoClient.connect(uri, (err, db) =>{
+									if (err){
+										throw err;
+									}
+									let ObjectDB = db.db("DigimonMovies");
+									let id = res.split("-m");
+									ObjectDB.collection("Movies").find({"_id":id})
+										.toArray((err, result) => {
+											if (err){
+												throw err;
+											}
+											if (result){
+												res.send(result);
+											} else {
+												res.send({"msg": "Movie NOT found"});
+											}
+											db.close();
+										});
+								});
+
+							} else 	{
+								console.log("no se como funciona la api de omdb");
+							}
+						});
+
+					})
+					.catch(err =>{
+						console.log(err);
+						res.send(err);
+					});
+			})
+		.catch(err => res.send(err));
+});
 ///////LLAMADA A FUNCIONES///////////////
 BringMeAll();
+//console.log(addUsers("papi", "1234", "0"));
