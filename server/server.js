@@ -84,19 +84,13 @@ server.get("/addmovie", async (req, res)=>{
 		.catch(err => res.send(err));
 });
 //////////////////////////////////////////////////////////////////////DELETEMOVIE/////////////////////////////////////////////////////////////////
-
 server.get("/deletemovie", async (req, res)=>{
 	let {user, favmovie} = req.body;
 	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
 		.then(result =>res.send(result));
 });
-// } else {
-// 	res.send({"msg": "Error"});
-// }
-// });
+
 ///////////////////////////////////////// OAUTH GITHUB/////////////////////////////////////////
-
-
 server.get("/loginOAuth", (req, res) => {
 	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
 });
@@ -408,4 +402,5 @@ server.listen(listenPort, () => {
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
 });
 
+///////LLAMADA A FUNCIONES///////////////
 BringMeAll();
