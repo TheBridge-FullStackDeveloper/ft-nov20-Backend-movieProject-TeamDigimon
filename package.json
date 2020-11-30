@@ -1,7 +1,6 @@
 {
   "name": "peliculas",
   "version": "1.0.0",
-  "description": "",
   "main": "server.js",
   "directories": {
     "doc": "docs"
@@ -30,10 +29,10 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "mongodb": "^3.6.3",
-    "mongoose": "^5.10.17",
-    "mssql": "^6.2.3",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "node-fetch": "^2.6.1"
   }
 }
