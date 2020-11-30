@@ -4,14 +4,17 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+///encrypt to future modules
 const base64 = require("base-64");
 const crypto = require("crypto");
+
+
 const fetch = require("node-fetch");
 require("dotenv").config();
 const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO public
 const server = express();
 const listenPort = 7777;
-const client_id = "4ef49b85eefcbcbd9302";
+const client_id = "4ef49b85eefcbcbd9302"; //Client_id
 const mysql = require("mysql");
 const CLIENT_ID = process.env.CLIENT_ID;
 const GH_SECRET = process.env.GH_SECRET;
@@ -56,8 +59,8 @@ connection.connect(function(err) {
 
 //////////////////////bring all the conections from mysql///////////////////////////////////////////
 function BringMeAll(){
-	connection.query("SELECT * FROM users", ["team-digimon"], function (error, results){
-		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results, fields){
+	connection.query("SELECT * FROM users", ["team-digimon"], () => {
+		connection.query("SELECT * FROM users", ["team-digimon"], function (error, results){
 			if (error) {
 				throw error;
 			} else {
@@ -87,18 +90,14 @@ server.get("/deletemovie", async (req, res)=>{
 	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
 		.then(result =>res.send(result));
 });
-// } else {
-// 	res.send({"msg": "Error"});
-// }
-// });
 ///////////////////////////////////////// OAUTH GITHUB/////////////////////////////////////////
 
 
-server.get("/loginOAuth", (req, res) => {
+server.get("/loginOAuth", ( res) => {
 	res.redirect(`https://github.com/login/oauth/authorize?client_id=${client_id}&scope=read:user,user:email`);
 });
 
-server.get("/login/github", (req, res) => {
+server.get("/login/github", ( res) => {
 	const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:user,user:email`;
 	res.redirect(githubAuthUrl);
 });
@@ -112,7 +111,6 @@ server.get("/redirectGH", async (req, res) => {
 			const userData = await getUserData(token);
 			let newUser = {"user": userData.login, "avatar": userData.avatarUrl, "email" : userData.email};
 			res.send(newUser);
-			console.log(newUser);
 		}
 	}
 });
@@ -162,8 +160,19 @@ async function getUserData(token) {
 	const email = await getUserEmail(token);
 
 	///JWT
+	function JWT(Payload) {
+		const header = {
+			"alg": "HS256",
+			"typ": "JWT"
+		};
+		const base64Payload = encodeBase64(JSON.stringify(Payload));
+		const base64Header = encodeBase64(JSON.stringify(header));
+		const signature = encodeBase64(hash(`${base64Header}.${base64Payload}`));
+		const JWT = `${base64Header}.${base64Payload}.${signature}`;
+		return JWT;
+	}
 	const Payload = {
-		"user" : req.body.user,
+		"user" : req.body.user, ///ToSolidAcces//
 		"profile" : "user",
 		"iat" : new Date()
 	};
