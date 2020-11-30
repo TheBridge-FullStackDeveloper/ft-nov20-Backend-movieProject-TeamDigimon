@@ -7,7 +7,6 @@ const cookieParser = require("cookie-parser");
 const base64 = require("base-64");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
-const { get } = require("http");
 require("dotenv").config();
 const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO public
 const server = express();
@@ -205,7 +204,7 @@ const MongoClient = require("mongodb").MongoClient;
 const uri = "mongodb+srv://Thedigimonbridge20:Thedigimonbridge20@moviesdigimon.gowkl.mongodb.net/MoviesDigimon?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { "useNewUrlParser": true, "useUnifiedTopology": true });
 client.connect(err => {
-	const collection = client.db("test").collection("devices");
+	// const collection = client.db("test").collection("devices");
 	// perform actions on the collection object
 	client.close();
 });
