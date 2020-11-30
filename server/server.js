@@ -84,7 +84,6 @@ server.get("/addmovie", async (req, res)=>{
 		.catch(err => res.send(err));
 });
 //////////////////////////////////////////////////////////////////////DELETEMOVIE/////////////////////////////////////////////////////////////////
-
 server.get("/deletemovie", async (req, res)=>{
 	let {user, favmovie} = req.body;
 	SQLquery("DELETE FROM favMovies WHERE idFilm = ? AND idusers = ?", [favmovie, user])
@@ -172,13 +171,13 @@ async function getUserData(token) {
 		return JWT;
 	}
 	const Payload = {
-		"user" : req.body.user, ///ToSolidAcces//
+		"user" : req.body.user, ///ToSolidAccess//
 		"profile" : "user",
 		"iat" : new Date()
 	};
 	const jwt = JWT(Payload);
 	//Grant access based on profile
-	switch (result[0].USER_PROFILE) {
+	switch (result[0].USER_PROFILE) { // toSolidAccess
 	case "admin":
 	{
 		//Access as administrator
@@ -413,4 +412,5 @@ server.listen(listenPort, () => {
 	console.log(`http://localhost:7777/server listening on port ${listenPort}`);
 });
 
+///////LLAMADA A FUNCIONES///////////////
 BringMeAll();
