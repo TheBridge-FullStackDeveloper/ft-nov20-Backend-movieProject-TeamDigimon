@@ -11,8 +11,6 @@ const base64 = require("base-64");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
 require("dotenv").config();
-const client_id = "4ef49b85eefcbcbd9302"; //Client_id
-const mysql = require("mysql");
 const CLIENT_ID = process.env.CLIENT_ID;
 const GH_SECRET = process.env.GH_SECRET;
 const HOST_SQL = process.env.HOST_SQL;
@@ -45,7 +43,7 @@ let connection = sql.createConnection({
 	"password" : PASSWORD_SQL, //ESTO PUEDE DAR NULL Y LLEVAR A PROBLEMAS MAS TARDE
 	"database" : DATABASE_SQL
 });
-console.log("SQL connection:", connection);
+//console.log("SQL connection:", connection);
 
 
 server.use(myPublicFiles);
@@ -360,6 +358,62 @@ server.use(cookieParser());
 /////////////////////////////////// MYSQL CONNECTION////////////////////////////////
 ////////////////FUNCTIONS/////////////////////////////////////////
 
+
+////////////////////FINDOMBD////////////
+function FINDOMBD(id, API_KEY_OMBD){
+	return new Promise((resolve, reject) => {
+		fetch(`http://www.omdbapi.com/?i=${id}&apikey=${API_KEY_OMBD}`)
+			.then(response => response.json())
+			.then(data => {
+				console.log(data);
+				if (data.Response === "True") {
+					const movieData = {
+						"Title" : data.Title,
+						"Year" : data.Year,
+						"Id": `O_${data.imdbID}`,
+						"Img" : data.Poster,
+						"Director": data.Director,
+						"Runtime" :data.Runtime
+
+					};
+					resolve({"movies" : movieData});
+
+				}
+			})
+			.catch(() => {
+				reject({"msg" : "Error connection with Omdb"});
+			});
+	});
+}
+
+////////////////FINDMONGO////////////////////////////7
+function findQuery(DataBaseMongo, collection, Tofind){
+	return new Promise((resolve, reject) => {
+		try {
+			MongoClient.connect(URI_MONGO, { "useUnifiedTopology": true }, (err, db) =>{
+				if (err){
+					throw err;
+				}
+				let ObjectDB = db.db(DataBaseMongo);
+				ObjectDB.collection(collection).find(Tofind)
+					.toArray((err, result) => {
+						if (err){
+							throw err;
+						}
+						if (result){
+							resolve(result);
+						} else {
+							reject({"msg": "NOT found"});
+						}
+						db.close();
+					});
+			});
+		} catch (e){
+			return { "msg":"MongoDB error connection"};
+		}
+	});
+}
+
 ///////////////////////QUERY
 function SQLquery(string, options = {}) {
 	return new Promise((resolve, reject) => {
@@ -390,6 +444,7 @@ function addUsers(user, password, rules){
 
 ////// MYSQL CONNECTION
 const { ObjectID } = require("mongodb");
+const { response } = require("express");
 
 
 connection.connect(function(err) {
@@ -410,6 +465,7 @@ function BringMeAll(){
 		} else {
 			console.log(results);
 		}
+		connection.end();
 	});
 
 }
@@ -758,54 +814,44 @@ server.listen(listenPort, () => {
 
 
 //////////////showMeMovie/////////////////////////////////////////////
-server.get("/showMyMovies", async (req, res)=>{
+server.get("/showMyMovies", async (req, resp)=>{
 	let {user} = req.body;
 	SQLquery("SELECT iduser FROM users WHERE Email = ?", [user])
 		.then(
 			(result)=>{
 				console.log(result[0].iduser);
 				SQLquery("SELECT idfilm FROM favMovies WHERE idusers = ?", [result[0].iduser])
-					.then(result =>{
-						console.log(result);
+				// .then(response => JSON.parse(response))
 
-						result.map(res, i =>{
-							console.log(res);
-							let rest = res[i].idfilm;
-							let wheretofind = rest.substring(0, 2);
-							if (wheretofind === "m-"){
-								MongoClient.connect(uri, (err, db) =>{
-									if (err){
-										throw err;
-									}
-									let ObjectDB = db.db("DigimonMovies");
-									let id = res.split("-m");
-									ObjectDB.collection("Movies").find({"_id":id})
-										.toArray((err, result) => {
-											if (err){
-												throw err;
-											}
-											if (result){
-												res.send(result);
-											} else {
-												res.send({"msg": "Movie NOT found"});
-											}
-											db.close();
-										});
-								});
+					.then(data =>{
+						data.map((res) =>{
+
+							let rest = res.idfilm;
+							let id = rest.substring(2);
+							console.log(rest[0]);
+							if (rest[0] === "m"){
+								findQuery("DigimonMovies", "Movies", {"_id":id})
+									.then(data => resp.send(data));
 
 							} else 	{
-								console.log("no se como funciona la api de omdb");
+								console.log(rest);
+								FINDOMBD(id, API_KEY_OMBD)
+									.then(data => resp.send(data));
 							}
 						});
 
 					})
 					.catch(err =>{
 						console.log(err);
-						res.send(err);
+						resp.send(err);
 					});
 			})
-		.catch(err => res.send(err));
+		.catch(err => resp.send(err));
 });
 ///////LLAMADA A FUNCIONES///////////////
-BringMeAll();
+//BringMeAll();
 //console.log(addUsers("papi", "1234", "0"));
+
+//MARCADA DE POLLA
+// findQuery("DigimonMovies", "Movies", {"Title":"Loquibambia"})
+// 	.then(data => console.log(data));
