@@ -1,28 +1,360 @@
 //DEPENDENCIAS Y CONFIGURACIÓN INICIAL
 
 const express = require("express");
+const server = express();
+const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO public
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 ///encrypt to future modules
 const base64 = require("base-64");
 const crypto = require("crypto");
-
-
 const fetch = require("node-fetch");
 require("dotenv").config();
-const myPublicFiles = express.static("../public");			//CONEXIÓN CON FICHERO public
-const server = express();
-const listenPort = 7777;
 const client_id = "4ef49b85eefcbcbd9302"; //Client_id
 const mysql = require("mysql");
 const CLIENT_ID = process.env.CLIENT_ID;
 const GH_SECRET = process.env.GH_SECRET;
+const HOST_SQL = process.env.HOST_SQL;
+const USER_SQL = process.env.USER_SQL;
+const PASSWORD_SQL = process.env.PASSWORD_SQL;
+const URI_MONGO = process.env.URI_MONGO;
+const SECRET_JWT = process.env.SECRET_JWT;
+const DATABASE_SQL = process.env.DATABASE_SQL;
+const listenPort = 7777;
+const MongoClient = require("mongodb").MongoClient;
+const sql = require("mysql");								//MÓDULO PARA CONEXIÓN CON SQL
+
+
+const options = {
+
+	"maxAge": 1000 * 60 * 15 * 4 * 24 * 15, // would expire after 15 days		////// OPTIONS DE JWT//////
+	"httpOnly": true, // The cookie only accessible by the web server
+	"signed": true // Indicates if the cookie should be signed
+};
+
+//SECRET DE BACK
+
+const SECRET = SECRET_JWT;
+
+//CONFIG SQL
+let connection = sql.createConnection({
+
+	"host"     : HOST_SQL,
+	"user"     : USER_SQL,
+	"password" : PASSWORD_SQL, //ESTO PUEDE DAR NULL Y LLEVAR A PROBLEMAS MAS TARDE
+	"database" : DATABASE_SQL
+});
+console.log("SQL connection:", connection);
+
 
 server.use(myPublicFiles);
 server.use(bodyParser.urlencoded({"extended":false}));
 server.use(bodyParser.json());
 server.use(cors());
+
+//////////////////MONGOOO///////////////////////
+
+
+server.post("/editMovieADM/:id", (req, res) => { // Opción particular de express, con el :id podemos meter dentro del endpoint el id de la peli y acceder más tarde a ello con req.params.id
+	const {Title, Year, Director, Duration, Img} = req.body; //destructuring, igualamos cada una de las llaves dentro del objeto aa req.body
+	try {
+		MongoClient.connect(URI_MONGO, (err, db) =>{
+			if (err){
+				throw err;
+			}
+			let ObjectDB = db.db("DigimonMovies");
+			ObjectDB.collection("Movies").updateOne(
+				{"_id" :req.params.id}, {Title, Year, Director, Duration, Img}, (err, result) => {
+					if (err){
+						throw err;
+					}
+					if (result){
+						res.send({"msg" : "Movie updated"});
+					} else {
+						res.send({"msg": "NOT updated"});
+					}
+					db.close();
+				});
+		});
+	} catch (e){
+		return { "msg" : "MongoDB error connection"};
+	}
+});
+
+///BORRAR PELICULAS de MONGODB////
+server.post("/deleteMovieMongo", (req, res) => {
+	try {
+		MongoClient.connect(URI_MONGO, (err, db) =>{
+			if (err){
+				throw err;
+			}
+			let ObjectDB = db.db("DigimonMovies");
+			ObjectDB.collection("Movies").deleteOne(
+				{"_id" : new ObjectID(req.body._id)}, (err, result) => {
+					if (err){
+						throw err;
+					}
+					if (result){
+						res.send({"msg" : "Movie deleted"});
+					} else {
+						res.send({"msg": "NOT deleted"});
+					}
+					db.close();
+				});
+		});
+	} catch (e){
+		return { "msg" : "MongoDB error connection"};
+	}
+});
+///GET PELICULA de MONGODB////
+server.get("/GetMovieMongo", (req, res) => {
+	try {
+		MongoClient.connect(URI_MONGO, (err, db) =>{
+			if (err){
+				throw err;
+			}
+			let ObjectDB = db.db("DigimonMovies");
+			ObjectDB.collection("Movies").find({"_id":new ObjectID(req.body._id)})
+				.toArray((err, result) => {
+					if (err){
+						throw err;
+					}
+					if (result){
+						res.send(result);
+					} else {
+						res.send({"msg": "Movie NOT found"});
+					}
+					db.close();
+				});
+		});
+	} catch (e){
+		return { "msg":"MongoDB error connection"};
+	}
+});
+//////ENDPOINTS DE ADMIN //////
+server.post("/createMovieADM", (req, res) => {
+
+	const {Title, Year, Director, Duration, Img} = req.body;
+	try {
+		if (Title && Year && Director && Duration){
+		// else Error
+			MongoClient.connect(URI_MONGO, (err, db) =>{
+				if (err){
+					throw err;
+				}
+				let ObjectDB = db.db("DigimonMovies");
+				ObjectDB.collection("Movies").insertOne(
+					{Title, Year, Director, Duration, Img}, (err, result) => {
+						if (err){
+							throw err;
+						}
+						if (result){
+							res.send({"msg" : "New movie created"});
+						} else {
+							res.send({"msg": "Problem occured"});
+						}
+						db.close();
+					});
+			});
+
+		} else {
+			res.send("Title, Year, Director and Duration required.");
+		}
+	} catch (e){
+		return { "msg" : "MongoDB error connection"};
+	}
+});
+
+////////////
+/////// REGISTER END POINT/////////
+server.post("/register", (req, res) => {
+
+	let newUser = req.body;
+
+
+	if (newUser.user && newUser.password) {
+
+		connection.query(`SELECT  Email FROM users WHERE Email = "${newUser.user}";`, function (err, result) {
+
+			if (err) {
+
+				console.log(err);
+				return;
+
+			}
+
+			result.map((elemento) => {
+
+				if (elemento.Email === newUser.user) {
+
+					return res.send("User already exists:");
+				} else {
+
+					connection.query(`INSERT INTO users (Email, pass, rules) VALUES ("${newUser.user}","${newUser.password}",0);`);
+
+					const Payload = {
+
+						"userName": newUser.user,
+						"iat": new Date(),
+						"role": "User",
+						"ip": req.ip
+					};
+					return res.cookie("jwt", generateJWT(Payload), options).send({"msg": "New user has been created."}); //"sessionCookie", "digimonCookie", options).send(generateJWT(Payload))
+
+				}
+
+			});
+
+		});
+
+	}
+
+
+});
+
+
+//////  LOGIN ENDPOINT  //////////
+server.post("/login", (req, res) => {
+
+	let encryptedLogin = req.body; //VARIABLE QUE CONTIENE EL JSON LOS DATOS ENCRIPTADOS DEL FRONT.
+	let derechos = req.body.derechos;
+
+
+	if (encryptedLogin.user && encryptedLogin.password){
+
+
+		connection.query("SELECT * FROM users", function (err, result, fields) {
+
+			if (err) {
+
+				console.log(err);
+				return;
+			}
+
+			result.map((elemento) => {
+
+				if (elemento.email === encryptedLogin.user && elemento.password === encryptedLogin.password){
+
+					console.log("correct");
+
+					if (derechos === 1) {
+						const Payload = {
+
+							"userName": "Admin",
+							"iat": new Date(),
+							"role": "Admin",
+							"ip": req.ip
+						};
+						res.cookie("jwt", generateJWT(Payload), options).send({"msg": Payload});
+
+					} else {
+
+						const Payload = {
+
+							"userName": encryptedLogin.user,
+							"iat": new Date(),
+							"role": "User",
+							"ip": req.ip
+						};
+						res.cookie("jwt", generateJWT(Payload), options).send({"msg": Payload}); //"sessionCookie", "digimonCookie", options).send(generateJWT(Payload))
+
+					}
+
+				} else {
+					res.send("Wrong user or password");
+				}
+			});
+
+			connection.end();
+		});
+	}
+});
+
+//COMPROBACIÓN DEL JWT
+server.get("/jwt", (req, res) => {
+
+	const Payload = {
+
+		"userName": "Admin",
+		"iat": new Date(),
+		"role": "Admin",
+		"ip": req.ip
+	};
+	const JWT = generateJWT(Payload);
+	res.cookie("jwt", JWT, {"httpOnly": true});
+	res.send("Hola Mundo");
+});
+
+
+//FUNCIONES PARA CODIFICACION JWT  =====>> TODO ESTO VA EN FRONTEND
+
+function encodeBase64(string) {
+	const encodedString = base64.encode(string);
+	const parsedString = encodedString
+		.replace(/=/g, "")
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_");
+	return parsedString;
+}
+
+function decodeBase64(base64String) {
+	const decodedString = base64.decoded(base64String);
+	return decodedString;
+}
+
+function generateJWT(Payload) {
+	const header = {
+		"alg": "HS256",
+		"typ": "JWT"
+	};
+	const base64Payload = encodeBase64(JSON.stringify(Payload));
+	const base64Header = encodeBase64(JSON.stringify(header));
+	const signature = encodeBase64(hash(`${base64Header}.${base64Payload}`));
+	const JWT = `${base64Header}.${base64Payload}.${signature}`;
+	return JWT;
+}
+
+function hash(string) {
+	const hashedString = crypto
+		.createHmac("sha256", SECRET)
+		.update(string)
+		.digest("base64");
+	return hashedString;
+}
+
+function verifyJWT(jwt) {
+	const [header, payload, signature] = jwt.split(".");
+	if (header && payload && signature) {
+		const expectedSignature = encodeBase64(hash(`${header}.${payload}`));
+		if (expectedSignature === signature) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function getJWTInfo(jwt) {
+	const [payload] = jwt.split(".")[1];
+	if (payload) {
+		try {
+			const data = JSON.parse(decodeBase64(payload));
+			return data;
+		} catch (e) {
+			return null;
+		}
+	}
+	return null;
+}
+// FUNCIONES DE ENCRIPTACION DE CONTRASEÑA
+
+function encryptPassword(string) {
+	const salt = "";
+	let saltedPassword = salt + string + salt;
+
+}
+///////////////////////
+
 server.use(cookieParser());
 
 /////////////////////////////////// MYSQL CONNECTION////////////////////////////////
@@ -58,12 +390,7 @@ function addUsers(user, password, rules){
 
 ////// MYSQL CONNECTION
 const { ObjectID } = require("mongodb");
-let connection = mysql.createConnection({
-	"host"     : "34.105.216.53",
-	"user"     : "team-digimon",
-	"password" : "",
-	"database" : "usersMovie"
-});
+
 
 connection.connect(function(err) {
 	if (err) {
@@ -211,10 +538,9 @@ async function getUserData(token) {
 
 ///////CONEXION CON MONGO VIA NATIVE DRIVERS////////////////////MOOOOOOONGOOOOOOO//////////////////////////////////////////
 
-const MongoClient = require("mongodb").MongoClient;
-const uri = "mongodb+srv://Thedigimonbridge20:Thedigimonbridge20@moviesdigimon.gowkl.mongodb.net/MoviesDigimon?retryWrites=true&w=majority";
-const client = new MongoClient(uri, { "useNewUrlParser": true, "useUnifiedTopology": true });
-client.connect(() => {
+
+const client = new MongoClient(URI_MONGO, { "useNewUrlParser": true, "useUnifiedTopology": true });
+client.connect(err => {
 	// const collection = client.db("test").collection("devices");
 	// perform actions on the collection object
 	client.close();
@@ -250,7 +576,7 @@ server.post("/DeleteMovieMongo/", (req, res) => {
 ///GET PELICULA de MONGODB////
 server.get("/GetMovieMongo", (req, res) => {
 	try {
-		MongoClient.connect(uri, (err, db) =>{
+		MongoClient.connect(URI_MONGO, (err, db) =>{
 			if (err){
 				throw err;
 			}
@@ -358,7 +684,7 @@ function SearchinMongoTitle(Title){
 
 	return new Promise((res) => {
 		try {
-			MongoClient.connect(uri, (err, db) => {
+			MongoClient.connect(URI_MONGO, (err, db) => {
 
 				if (err) {
 					throw err;
@@ -399,7 +725,7 @@ function SearchinMongoTitle(Title){
 function SearchinMongoId (filmId){
 	return new Promise((res) => {
 		try {
-			MongoClient.connect(uri, (err, db) =>{
+			MongoClient.connect(URI_MONGO, (err, db) =>{
 				if (err){
 					throw err;
 				}
